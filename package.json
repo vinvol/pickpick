@@ -1,15 +1,15 @@
 {
-    "name": "pickpick",
+    "name": "@vinvol/pickpick",
     "version": "1.0.0",
     "main": "index.js",
+    "description": "A little color picker",
     "author": "vinvol",
     "license": "MIT",
     "dependencies": {
         "clipboardy": "2.3.0",
-        "electron": "9.0.0",
         "robotjs": "0.6.0"
     },
-    "devDependencies": {
-        "electron-rebuild": "^1.11.0"
+    "script": {
+        "postinstall": "electron-builder install-app-deps"
     }
 }
