@@ -3,8 +3,12 @@
     "version": "1.0.0",
     "main": "index.js",
     "description": "A little color picker",
+    "repository": "git@github.com:vinvol/pickpick.git",
     "author": "vinvol",
     "license": "MIT",
+    "publishConfig": {
+      "access": "public"
+    },
     "dependencies": {
         "clipboardy": "2.3.0",
         "robotjs": "0.6.0"
