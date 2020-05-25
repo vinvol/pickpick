@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>Hello World!</title>
+        <!-- https://electronjs.org/docs/tutorial/security#csp-meta-tag -->
+        <meta
+            http-equiv="Content-Security-Policy"
+            content="script-src 'self' 'unsafe-inline';"
+        />
+    </head>
+    <body
+        style="
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            position: relative;
+            font-size: 18px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        "
+    >
+        <div
+            id="label"
+            style="
+                position: absolute;
+                bottom: 0;
+
+                display: none;
+            "
+        >
+            <span id="colorName">______</span>
+            <span class="pill" style="width: 20px; height: 20px; color: white;"
+                >[X]</span
+            >
+            <span class="pill" style="width: 20px; height: 20px; color: black;"
+                >[X]</span
+            >
+        </div>
+        <canvas
+            id="myCanvas"
+            width="400"
+            height="400"
+            style="
+                transform: scale(0.5);
+                image-rendering: pixelated;
+                transform-origin: top left;
+            "
+        ></canvas>
+        <canvas
+            id="tempCanvas"
+            width="50"
+            height="50"
+            style="
+                display: none;
+                image-rendering: pixelated;
+                transform: scale(10);
+                border: 1px red solid;
+            "
+        ></canvas>
+    </body>
+    <script>
+        const nextPower = (n) => {
+            let count = 0;
+
+            while (n != 0) {
+                n >>= 1;
+                count += 1;
+            }
+
+            return 1 << count;
+        };
+
+        const canvas = document.getElementById("myCanvas");
+
+        const ctx = canvas.getContext("2d");
+
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const radius = Math.ceil(canvas.width * 0.45);
+
+        const tempCanvas = document.getElementById("tempCanvas");
+        const tempCtx = tempCanvas.getContext("2d");
+
+        // window.w = 20;
+        // window.h = 20;
+        // document.addEventListener("keypress", (e) => {
+        //     if (e.key === "w") {
+        //         w++;
+        //     }
+        //     if (e.key === "q") {
+        //         w--;
+        //     }
+        // });
+
+        document.addEventListener("keydown", (e) => {
+            window.ipcRenderer.send("move", e.key);
+        });
+
+        window.ipcRenderer.on("action-update-label", (event, arg) => {
+            // Update the second window label content with the data sent from
+            // the first window :) !
+
+            canvas.width = canvas.width;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
+            ctx.lineWidth = 16;
+            ctx.strokeStyle = `black`;
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
+            ctx.lineWidth = 12;
+            ctx.strokeStyle = `white`;
+
+            ctx.stroke();
+
+            ctx.save();
+
+            const imgData = ctx.createImageData(
+                arg.dimension.width,
+                arg.dimension.height
+            );
+            const powerWidth = nextPower(arg.dimension.width);
+            for (let x = 0; x < arg.dimension.width; x++) {
+                for (let y = 0; y < arg.dimension.height; y++) {
+                    const i = y * (arg.dimension.width * 4) + x * 4;
+                    const j = y * (powerWidth * 4) + x * 4;
+                    imgData.data[i] = arg.img[j + 2];
+                    imgData.data[i + 1] = arg.img[j + 1];
+                    imgData.data[i + 2] = arg.img[j];
+                    imgData.data[i + 3] = arg.img[j + 3];
+                }
+            }
+
+            // for (let i = 0, j = 0; i < arg.img.length; i) {
+            //     imgData.data[i] = arg.img[i + 2];
+            //     imgData.data[i + 1] = arg.img[i + 1];
+            //     imgData.data[i + 2] = arg.img[i];
+            //     imgData.data[i + 3] = arg.img[i + 3];
+            //     i += 4;
+            //     // j += 3;
+            // }
+            tempCanvas.width = arg.dimension.width;
+            tempCanvas.height = arg.dimension.height;
+            tempCtx.putImageData(imgData, 0, 0);
+
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
+            ctx.clip();
+
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(
+                tempCanvas,
+                0,
+                0,
+                tempCanvas.width,
+                tempCanvas.height,
+                0,
+                0,
+                canvas.width,
+                canvas.height
+            );
+
+            ctx.beginPath();
+            const pixelDimension = canvas.width / tempCanvas.width;
+            for (
+                let x = pixelDimension - 1;
+                x <= canvas.width;
+                x += pixelDimension
+            ) {
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                for (
+                    let y = pixelDimension - 1;
+                    y <= canvas.height;
+                    y += pixelDimension
+                ) {
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(canvas.width, y);
+                }
+            }
+
+            ctx.strokeStyle = "hotpink";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            ctx.beginPath();
+            const near = pixelDimension * (tempCanvas.width / 2);
+            const far = pixelDimension * (tempCanvas.width / 2 + 1);
+            ctx.moveTo(near, near);
+            ctx.lineTo(near, far);
+            ctx.lineTo(far, far);
+            ctx.lineTo(far, near);
+            ctx.lineTo(near, near);
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = 6;
+            ctx.stroke();
+
+            let colorName = document.getElementById("colorName");
+            colorName.innerHTML = arg.message;
+
+            let colorPills = document.getElementsByClassName("pill");
+            Array.from(colorPills).map(
+                (pill) => (pill.style.backgroundColor = `#${arg.color}`)
+            );
+
+            let label = document.getElementById("label");
+            label.style.color = `white`;
+            label.style.backgroundColor = `#${arg.backgroundColor}`;
+        });
+    </script>
+</html>
