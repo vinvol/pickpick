@@ -3,7 +3,13 @@ const { app, BrowserWindow, ipcMain } = require("electron");
 const robot = require("robotjs");
 const clipboardy = require("clipboardy");
 
+let appIsAlive = true;
 const DIMENSION = 200;
+try {
+    let mouse = robot.getMousePos();
+    robot.screen.capture(0, 0, 1, 1);
+    robot.moveMouse(mouse.x, mouse.y);
+} catch (e) {}
 
 const createWindow = () => {
     const screenSize = robot.getScreenSize();
@@ -20,9 +26,9 @@ const createWindow = () => {
 
     const moveAndAdjust = (x, y) => {
         if (y > screenSize.height / 2) {
-            mainWindow.setPosition(x - DIMENSION / 2, y - DIMENSION / 2 - 200);
+            mainWindow?.setPosition(x - DIMENSION / 2, y - DIMENSION / 2 - 150);
         } else {
-            mainWindow.setPosition(x - DIMENSION / 2, y - DIMENSION / 2 + 200);
+            mainWindow?.setPosition(x - DIMENSION / 2, y - DIMENSION / 2 + 150);
         }
     };
 
@@ -43,22 +49,16 @@ const createWindow = () => {
         }
 
         let mouse = robot.getMousePos();
-        console.log(mouse);
         robot.moveMouse(mouse.x + dx, mouse.y + dy);
         mouse = robot.getMousePos();
-        console.log(mouse);
         moveAndAdjust(mouse.x, mouse.y);
     });
 
     const sendColor = () => {
-        // Get mouse position.
         var mouse = robot.getMousePos();
         var hex = robot.getPixelColor(mouse.x, mouse.y);
         if (mouse.x > 0 && mouse.y > 0) {
-            // console.log(mouse);
-            // Get pixel color in hex format.
             var hex = robot.getPixelColor(mouse.x, mouse.y);
-            // console.log("#" + hex + " at x:" + mouse.x + " y:" + mouse.y);
 
             var size = 10;
             var buff = robot.screen.capture(
@@ -67,8 +67,8 @@ const createWindow = () => {
                 size,
                 size
             );
-            // console.debug(mouse.x - size / 2, mouse.y - size / 2);
-            const img = buff.image; //.toString("base64");
+
+            const img = buff.image;
 
             const arg = {
                 img,
@@ -77,14 +77,17 @@ const createWindow = () => {
                 color: hex,
                 backgroundColor: "yellow"
             };
-            mainWindow.webContents.send("action-update-label", arg);
+
+            mainWindow?.webContents?.send("action-update-label", arg);
             moveAndAdjust(mouse.x, mouse.y);
         }
     };
     mainWindow.setPosition(0, 0);
     const loop = () => {
         sendColor();
-        setTimeout(loop, 50);
+        if (appIsAlive) {
+            setTimeout(loop, 50);
+        }
     };
     loop();
 
@@ -92,6 +95,7 @@ const createWindow = () => {
     // mainWindow.webContents.openDevTools();
 
     mainWindow.on("blur", function () {
+        appIsAlive = false;
         const mouse = robot.getMousePos();
         const colorHex = robot.getPixelColor(mouse.x, mouse.y);
 
@@ -103,6 +107,8 @@ const createWindow = () => {
 
     // Emitted when the window is closed.
     mainWindow.on("closed", function () {
+        appIsAlive = false;
+
         // Dereference the window object, usually you would store windows
         // in an array if your app supports multi windows, this is the time
         // when you should delete the corresponding element.
@@ -119,9 +125,9 @@ app.whenReady().then(createWindow);
 app.on("window-all-closed", () => {
     // On macOS it is common for applications and their menu bar
     // to stay active until the user quits explicitly with Cmd + Q
-    if (process.platform !== "darwin") {
-        app.quit();
-    }
+    // if (process.platform !== "darwin") {
+    app.quit();
+    // }
 });
 
 app.on("activate", () => {

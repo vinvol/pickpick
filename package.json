@@ -6,6 +6,9 @@
     "repository": "git@github.com:vinvol/pickpick.git",
     "author": "vinvol",
     "license": "MIT",
+    "bin": {
+        "pickpick": "bin/app.js"
+    },
     "publishConfig": {
         "access": "public"
     },
@@ -13,7 +16,13 @@
         "clipboardy": "2.3.0",
         "robotjs": "0.6.0"
     },
-    "script": {
-        "postinstall": "electron-builder install-app-deps"
+    "scripts": {
+        "start": "electron .",
+        "postinstall": "electron-builder install-app-deps",
+        "dist": "electron-builder"
+    },
+    "devDependencies": {
+        "electron": "9.0.0",
+        "electron-builder": "^22.6.1"
     }
 }
