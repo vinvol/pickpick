@@ -1,7 +1,16 @@
 const path = require("path");
-const { app, BrowserWindow, ipcMain } = require("electron");
+const { app, BrowserWindow, ipcMain, Menu, Tray } = require("electron");
 const robot = require("robotjs");
 const clipboardy = require("clipboardy");
+const nearestColor = require("nearest-color");
+const namedColors = require("color-name-list");
+
+// nearestColor need objects {name => hex} as input
+const colors = namedColors.reduce(
+    (o, { name, hex }) => Object.assign(o, { [name]: hex }),
+    {}
+);
+const nearest = nearestColor.from(colors);
 
 let appIsAlive = true;
 const DIMENSION = 200;
@@ -11,7 +20,19 @@ try {
     robot.moveMouse(mouse.x, mouse.y);
 } catch (e) {}
 
+const clamp = (min, max, n) => (n > min ? (n > max ? max : n) : min);
+
 const createWindow = () => {
+    let tray = new Tray("./assets/iconTemplate.png");
+    const contextMenu = Menu.buildFromTemplate([
+        { label: "Item1", type: "radio" },
+        { label: "Item2", type: "radio" },
+        { label: "Item3", type: "radio", checked: true },
+        { label: "Item4", type: "radio" }
+    ]);
+    tray.setToolTip("This is my application.");
+    tray.setContextMenu(contextMenu);
+
     const screenSize = robot.getScreenSize();
     let mainWindow = new BrowserWindow({
         webPreferences: {
@@ -25,10 +46,12 @@ const createWindow = () => {
     mainWindow.loadFile(`./trans.html`);
 
     const moveAndAdjust = (x, y) => {
+        const finalX = clamp(0, screenSize.width - 200, x - DIMENSION / 2);
+
         if (y > screenSize.height / 2) {
-            mainWindow?.setPosition(x - DIMENSION / 2, y - DIMENSION / 2 - 150);
+            mainWindow?.setPosition(finalX, y - DIMENSION / 2 - 150);
         } else {
-            mainWindow?.setPosition(x - DIMENSION / 2, y - DIMENSION / 2 + 150);
+            mainWindow?.setPosition(finalX, y - DIMENSION / 2 + 150);
         }
     };
 
@@ -47,6 +70,9 @@ const createWindow = () => {
         if (keyPress === "ArrowDown") {
             dy = 1;
         }
+        if (keyPress === "Escape") {
+            mainWindow.close();
+        }
 
         let mouse = robot.getMousePos();
         robot.moveMouse(mouse.x + dx, mouse.y + dy);
@@ -61,19 +87,19 @@ const createWindow = () => {
             var hex = robot.getPixelColor(mouse.x, mouse.y);
 
             var size = 10;
-            var buff = robot.screen.capture(
-                mouse.x - size / 2,
-                mouse.y - size / 2,
-                size,
-                size
-            );
+
+            // XXX: fix the corners of the screen
+            const xPos = clamp(0, screenSize.width, mouse.x - size / 2);
+            const yPos = clamp(0, screenSize.height, mouse.y - size / 2);
+
+            var buff = robot.screen.capture(xPos, yPos, size, size);
 
             const img = buff.image;
 
             const arg = {
                 img,
                 dimension: { width: buff.width, height: buff.height },
-                message: hex,
+                colorName: nearest(hex),
                 color: hex,
                 backgroundColor: "yellow"
             };
@@ -86,7 +112,7 @@ const createWindow = () => {
     const loop = () => {
         sendColor();
         if (appIsAlive) {
-            setTimeout(loop, 50);
+            setTimeout(loop, 15);
         }
     };
     loop();
@@ -95,7 +121,7 @@ const createWindow = () => {
     // mainWindow.webContents.openDevTools();
 
     mainWindow.on("blur", function () {
-        appIsAlive = false;
+        // appIsAlive = false;
         const mouse = robot.getMousePos();
         const colorHex = robot.getPixelColor(mouse.x, mouse.y);
 

@@ -15,26 +15,68 @@
             margin: 0;
             padding: 0;
             position: relative;
-            font-size: 18px;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            width: 200px;
+            height: 200px;
         "
     >
         <div
-            id="label"
             style="
                 position: absolute;
-                bottom: 0;
-
-                display: none;
+                top: 155px;
+                z-index: 4;
+                width: 190px;
+                text-align: center;
+                left: 5px;
+                border-radius: 5px;
             "
         >
-            <span id="colorName">______</span>
-            <span class="pill" style="width: 20px; height: 20px; color: white;"
-                >[X]</span
+            <div
+                id="label"
+                style="
+                    background: rgba(10, 10, 10, 0.7);
+                    border-radius: 4px;
+
+                    color: white;
+                    box-shadow: 1px 1px black;
+                    text-align: left;
+                    font-family: monospace;
+                    font-size: 16px;
+
+                    display: grid;
+                    grid-template-columns: 45px 1fr;
+                    grid-template-rows: 1fr 1fr;
+                    gap: 0px 0px;
+                    grid-template-areas: 'block colorName' 'block color';
+                "
             >
-            <span class="pill" style="width: 20px; height: 20px; color: black;"
-                >[X]</span
-            >
+                <div
+                    style="
+                        grid-area: block;
+                        width: 40px;
+                        height: 40px;
+                        font-size: 32px;
+                    "
+                    id="block"
+                >
+                    Aa
+                </div>
+                <span
+                    style="
+                        opacity: 0.7;
+                        grid-area: colorName;
+                        word-wrap: nowrap;
+                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana,
+                            sans-serif;
+                    "
+                    id="colorName"
+                    >______</span
+                >
+                <span
+                    style="grid-area: color; text-transform: uppercase;"
+                    id="color"
+                    >______</span
+                >
+            </div>
         </div>
         <canvas
             id="myCanvas"
@@ -68,6 +110,47 @@
             }
 
             return 1 << count;
+        };
+
+        const isBright = (color) => {
+            let r = 1,
+                g = 1,
+                b = 1,
+                hsp;
+            // Check the format of the color, HEX or RGB?
+            if (color.match(/^rgb/)) {
+                // If RGB --> store the red, green, blue values in separate variables
+                let colors = color.match(
+                    /^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*(\d+(?:\.\d+)?))?\)$/
+                );
+                if (colors) {
+                    if (colors?.length > 2) {
+                        r = colors[1];
+                        g = colors[2];
+                        b = colors[3];
+                    }
+                } else {
+                    return false;
+                }
+            } else {
+                // If hex --> Convert it to RGB: http://gist.github.com/983661
+                let colors = +(
+                    "0x" +
+                    color.slice(1).replace(color.length < 5 && /./g, "$&$&")
+                );
+
+                r = colors >> 16;
+                g = (colors >> 8) & 255;
+                b = colors & 255;
+            }
+
+            // HSP (Highly Sensitive Poo) equation from http://alienryderflex.com/hsp.html
+            hsp = Math.sqrt(
+                0.299 * (r * r) + 0.587 * (g * g) + 0.114 * (b * b)
+            );
+
+            // Using the HSP value, determine whether the color is light or dark
+            return hsp > 127.5;
         };
 
         const canvas = document.getElementById("myCanvas");
@@ -196,12 +279,12 @@
             ctx.stroke();
 
             let colorName = document.getElementById("colorName");
-            colorName.innerHTML = arg.message;
-
-            let colorPills = document.getElementsByClassName("pill");
-            Array.from(colorPills).map(
-                (pill) => (pill.style.backgroundColor = `#${arg.color}`)
-            );
+            colorName.innerHTML = arg.colorName.name;
+            let color = document.getElementById("color");
+            color.innerHTML = `#${arg.color}`;
+            let block = document.getElementById("block");
+            block.style.background = `#${arg.color}`;
+            block.style.color = isBright(arg.color) ? "black" : "white";
 
             let label = document.getElementById("label");
             label.style.color = `white`;

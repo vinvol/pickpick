@@ -14,11 +14,13 @@
     },
     "dependencies": {
         "clipboardy": "2.3.0",
+        "color-name-list": "5.27.0",
+        "nearest-color": "0.4.4",
         "robotjs": "0.6.0"
     },
     "scripts": {
         "start": "electron .",
-        "postinstall": "electron-builder install-app-deps",
+        "postinstall": "npx electron-builder install-app-deps",
         "dist": "electron-builder"
     },
     "devDependencies": {
