@@ -16,6 +16,7 @@
         "clipboardy": "2.3.0",
         "color-name-list": "5.27.0",
         "nearest-color": "0.4.4",
+        "electron": "9.0.0",
         "robotjs": "github:vinvol/robotjs#vinvol/multi-display"
     },
     "scripts": {
@@ -24,7 +25,6 @@
         "dist": "electron-builder"
     },
     "devDependencies": {
-        "electron": "9.0.0",
         "electron-builder": "^22.6.1"
     }
 }
