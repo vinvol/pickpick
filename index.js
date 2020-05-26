@@ -23,10 +23,9 @@ try {
 const clamp = (min, max, n) => (n > min ? (n > max ? max : n) : min);
 
 const createWindow = () => {
-    
     appIsAlive = true;
     const screenSizes = robot.getAllScreensSize();
-    
+
     let mainWindow = new BrowserWindow({
         webPreferences: {
             preload: path.resolve(__dirname, "preload.js")
@@ -135,33 +134,25 @@ const createWindow = () => {
         // when you should delete the corresponding element.
         mainWindow = null;
     });
-
 };
 
-const createTray = () => { 
-    
-
-        let tray = new Tray("./assets/iconTemplate.png");
-        // tray.setContextMenu(contextMenu);
-        // const contextMenu = Menu.buildFromTemplate([
-        //     { label: "Item1", type: "radio" },
-        //     { label: "Item2", type: "radio" },
-        //     { label: "Item3", type: "radio", checked: true },
-        //     { label: "Item4", type: "radio" }
-        // ]);
-        tray.setToolTip("piccpick");
-        tray.on('click', createWindow);
-        
-    
-}
+const createTray = () => {
+    let tray = new Tray("./assets/iconTemplate.png");
+    // tray.setContextMenu(contextMenu);
+    // const contextMenu = Menu.buildFromTemplate([
+    //     { label: "Item1", type: "radio" },
+    //     { label: "Item2", type: "radio" },
+    //     { label: "Item3", type: "radio", checked: true },
+    //     { label: "Item4", type: "radio" }
+    // ]);
+    tray.setToolTip("piccpick");
+    tray.on("click", createWindow);
+};
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.whenReady().then(
-   createTray
-    
-)//.then(createWindow);
+app.whenReady().then(createTray); //.then(createWindow);
 
 // Quit when all windows are closed.
 app.on("window-all-closed", () => {
