@@ -1,6 +1,6 @@
 {
     "name": "@vinvol/pickpick",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "main": "index.js",
     "description": "A little color picker",
     "repository": "git@github.com:vinvol/pickpick.git",
