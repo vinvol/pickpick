@@ -23,17 +23,10 @@ try {
 const clamp = (min, max, n) => (n > min ? (n > max ? max : n) : min);
 
 const createWindow = () => {
-    let tray = new Tray("./assets/iconTemplate.png");
-    const contextMenu = Menu.buildFromTemplate([
-        { label: "Item1", type: "radio" },
-        { label: "Item2", type: "radio" },
-        { label: "Item3", type: "radio", checked: true },
-        { label: "Item4", type: "radio" }
-    ]);
-    tray.setToolTip("This is my application.");
-    tray.setContextMenu(contextMenu);
-
-    const screenSize = robot.getScreenSize();
+    
+    appIsAlive = true;
+    const screenSizes = robot.getAllScreensSize();
+    
     let mainWindow = new BrowserWindow({
         webPreferences: {
             preload: path.resolve(__dirname, "preload.js")
@@ -46,13 +39,15 @@ const createWindow = () => {
     mainWindow.loadFile(`./trans.html`);
 
     const moveAndAdjust = (x, y) => {
-        const finalX = clamp(0, screenSize.width - 200, x - DIMENSION / 2);
-
-        if (y > screenSize.height / 2) {
-            mainWindow?.setPosition(finalX, y - DIMENSION / 2 - 150);
-        } else {
-            mainWindow?.setPosition(finalX, y - DIMENSION / 2 + 150);
-        }
+        // const finalX = clamp(0, screenSize.width - 200, x - DIMENSION / 2);
+        const finalX = x;
+        mainWindow?.setPosition(finalX, y - DIMENSION / 2 + 150);
+        /// XXX redo the border logic
+        // if (y > screenSize.height / 2) {
+        //     mainWindow?.setPosition(finalX, y - DIMENSION / 2 - 150);
+        // } else {
+        //     mainWindow?.setPosition(finalX, y - DIMENSION / 2 + 150);
+        // }
     };
 
     ipcMain.on("move", function (event, keyPress) {
@@ -83,32 +78,32 @@ const createWindow = () => {
     const sendColor = () => {
         var mouse = robot.getMousePos();
         var hex = robot.getPixelColor(mouse.x, mouse.y);
-        if (mouse.x > 0 && mouse.y > 0) {
-            var hex = robot.getPixelColor(mouse.x, mouse.y);
 
-            var size = 10;
+        var size = 10;
 
-            // XXX: fix the corners of the screen
-            const xPos = clamp(0, screenSize.width, mouse.x - size / 2);
-            const yPos = clamp(0, screenSize.height, mouse.y - size / 2);
+        // XXX: fix the corners of the screen
+        // const xPos = clamp(0, screenSize.width, mouse.x - size / 2);
+        // const yPos = clamp(0, screenSize.height, mouse.y - size / 2);
 
-            var buff = robot.screen.capture(xPos, yPos, size, size);
+        const xPos = mouse.x - size / 2;
+        const yPos = mouse.y - size / 2;
 
-            const img = buff.image;
+        var buff = robot.screen.capture(xPos, yPos, size, size);
 
-            const arg = {
-                img,
-                dimension: { width: buff.width, height: buff.height },
-                colorName: nearest(hex),
-                color: hex,
-                backgroundColor: "yellow"
-            };
+        const img = buff.image;
 
-            mainWindow?.webContents?.send("action-update-label", arg);
-            moveAndAdjust(mouse.x, mouse.y);
-        }
+        const arg = {
+            img,
+            dimension: { width: buff.width, height: buff.height },
+            colorName: nearest(hex),
+            color: hex,
+            backgroundColor: "yellow"
+        };
+
+        mainWindow?.webContents?.send("action-update-label", arg);
+        moveAndAdjust(mouse.x, mouse.y);
     };
-    mainWindow.setPosition(0, 0);
+    mainWindow.setPosition(0, -500);
     const loop = () => {
         sendColor();
         if (appIsAlive) {
@@ -140,20 +135,41 @@ const createWindow = () => {
         // when you should delete the corresponding element.
         mainWindow = null;
     });
+
 };
+
+const createTray = () => { 
+    
+
+        let tray = new Tray("./assets/iconTemplate.png");
+        // tray.setContextMenu(contextMenu);
+        // const contextMenu = Menu.buildFromTemplate([
+        //     { label: "Item1", type: "radio" },
+        //     { label: "Item2", type: "radio" },
+        //     { label: "Item3", type: "radio", checked: true },
+        //     { label: "Item4", type: "radio" }
+        // ]);
+        tray.setToolTip("piccpick");
+        tray.on('click', createWindow);
+        
+    
+}
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.whenReady().then(createWindow);
+app.whenReady().then(
+   createTray
+    
+)//.then(createWindow);
 
 // Quit when all windows are closed.
 app.on("window-all-closed", () => {
     // On macOS it is common for applications and their menu bar
     // to stay active until the user quits explicitly with Cmd + Q
-    // if (process.platform !== "darwin") {
-    app.quit();
-    // }
+    if (process.platform !== "darwin") {
+        app.quit();
+    }
 });
 
 app.on("activate", () => {
