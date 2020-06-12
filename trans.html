@@ -44,9 +44,10 @@
 
                     display: grid;
                     grid-template-columns: 45px 1fr;
-                    grid-template-rows: 1fr 1fr;
+                    grid-template-rows: 1fr 1fr auto;
                     gap: 0px 0px;
-                    grid-template-areas: 'block colorName' 'block color';
+                    grid-template-areas: 'block colorName' 'block color' 'hexs hexs';
+
                 "
             >
                 <div
@@ -76,6 +77,14 @@
                     id="color"
                     >______</span
                 >
+                <div
+                style="
+                    grid-area: hexs;                    
+                "
+                id="hexs"
+                >
+                
+            </div>
             </div>
         </div>
         <canvas
@@ -176,13 +185,14 @@
         // });
 
         document.addEventListener("keydown", (e) => {
-            window.ipcRenderer.send("move", e.key);
+            window.ipcRenderer.send("down", e.key);
+        });
+        document.addEventListener("keyup", (e) => {
+            window.ipcRenderer.send("up", e.key);
         });
 
         window.ipcRenderer.on("action-update-label", (event, arg) => {
-            // Update the second window label content with the data sent from
-            // the first window :) !
-
+            
             canvas.width = canvas.width;
             ctx.beginPath();
             ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
@@ -289,6 +299,16 @@
             let label = document.getElementById("label");
             label.style.color = `white`;
             label.style.backgroundColor = `#${arg.backgroundColor}`;
+
+            let colorHexs = document.getElementById("hexs");
+            const hexesStr = arg.colorHexs.map(
+                hex => `<div style=" 
+                outline: 1px white solid;
+                border: 1px black solid;
+                display: inline-block; width: 10px; height: 10px; margin: 4px; background: #${hex}" ></div>`
+            ).join('');
+            colorHexs.innerHTML = hexesStr;
+
         });
     </script>
 </html>

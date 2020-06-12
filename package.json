@@ -13,6 +13,7 @@
         "access": "public"
     },
     "dependencies": {
+        "camelcase": "6.0.0",
         "clipboardy": "2.3.0",
         "color-name-list": "5.27.0",
         "nearest-color": "0.4.4",
